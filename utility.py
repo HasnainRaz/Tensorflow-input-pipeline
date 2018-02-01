@@ -2,6 +2,12 @@ import tensorflow as tf
 import random
 
 
+def _rotate(image, mask):
+    k = tf.random_uniform([1],minval=0,maxval=4,dtype=tf.int32)[0]
+    image = tf.image.rot90(image,k)
+    mask = tf.image.rot90(mask,k)
+    return image, mask
+
 def _corrupt_brightness(image, mask):
     """Radnomly applies a random brightness change."""
     cond_brightness = tf.cast(tf.random_uniform(
@@ -139,6 +145,9 @@ def data_batch(image_paths, mask_paths, augment=False, batch_size=4, num_threads
         data = data.map(_flip_left_right,
                         num_parallel_calls=num_threads).prefetch(30)
 
+        data = data.map(_rotate,
+                       num_parallel_calls=num_threads).prefetch(30)
+        
     # Batch the data
     data = data.batch(batch_size)
 
