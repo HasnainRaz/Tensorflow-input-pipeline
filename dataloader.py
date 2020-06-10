@@ -3,6 +3,7 @@ import random
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
+
 class DataLoader(object):
     """A TensorFlow Dataset API based loader for semantic segmentation problems."""
 
@@ -177,7 +178,7 @@ class DataLoader(object):
         return image, mask
 
 
-    def data_batch(self, batch_size, augment, shuffle=False, one_hot_encode=False):
+    def data_batch(self, batch_size, shuffle=False):
         """
         Reads data, normalizes it, shuffles it, then batches it, returns a
         the next element in dataset op and the dataset initializer op.
