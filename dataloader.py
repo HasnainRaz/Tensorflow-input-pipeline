@@ -116,8 +116,8 @@ class DataLoader(object):
         """
         Resizes images to specified size.
         """
-        image = tf.image.resize(image, [self.image_size, self.image_size])
-        mask = tf.image.resize(mask, [self.image_size, self.image_size], method='nearest')
+        image = tf.image.resize(image, self.image_size)
+        mask = tf.image.resize(mask, self.image_size)
         
         return image, mask
 
@@ -149,34 +149,36 @@ class DataLoader(object):
         
         return image, one_hot_map
 
+    @tf.function
     def _map_function(self, images_path, masks_path):
         image, mask = self._parse_data(images_path, masks_path)
 
-        if self.augment:
-            if self.compose:
-                image, mask = self._corrupt_brightness(image, mask)
-                image, mask = self._corrupt_contrast(image, mask)
-                image, mask = self._corrupt_saturation(image, mask)
-                image, mask = self._crop_random(image, mask)
-                image, mask = self._flip_left_right(image, mask)
-            else:
-                options = [self._corrupt_brightness,
-                           self._corrupt_contrast,
-                           self._corrupt_saturation,
-                           self._crop_random,
-                           self._flip_left_right]
-                augment_func = random.choice(options)
-                image, mask = augment_func(images_path, masks_path)
+        def _augmentation_func(image_f, mask_f):
+            if self.augment:
+                if self.compose:
+                    image_f, mask_f = self._corrupt_brightness(image_f, mask_f)
+                    image_f, mask_f = self._corrupt_contrast(image_f, mask_f)
+                    image_f, mask_f = self._corrupt_saturation(image_f, mask_f)
+                    image_f, mask_f = self._crop_random(image_f, mask_f)
+                    image_f, mask_f = self._flip_left_right(image_f, mask_f)
+                else:
+                    options = [self._corrupt_brightness,
+                               self._corrupt_contrast,
+                               self._corrupt_saturation,
+                               self._crop_random,
+                               self._flip_left_right]
+                    augment_func = random.choice(options)
+                    image_f, mask_f = augment_func(image_f, mask_f)
 
-        if self.one_hot_encoding:
-            if self.palette is None:
-                raise ValueError('No Palette for one-hot encoding specified in the data loader! \
-                                  please specify one when initializing the loader.')
-            image, mask = self._one_hot_encode(image, mask)
+            if self.one_hot_encoding:
+                if self.palette is None:
+                    raise ValueError('No Palette for one-hot encoding specified in the data loader! \
+                                      please specify one when initializing the loader.')
+                image_f, mask_f = self._one_hot_encode(image_f, mask_f)
 
-        image, mask = self._resize_data(image, mask)
-        return image, mask
-
+            image_f, mask_f = self._resize_data(image_f, mask_f)
+            return image_f, mask_f
+        return tf.py_function(_augmentation_func, [image, mask], [tf.float32, tf.float32])
 
     def data_batch(self, batch_size, shuffle=False):
         """
