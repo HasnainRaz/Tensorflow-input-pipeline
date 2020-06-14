@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import tensorflow as tf
 import random
 
@@ -7,8 +9,9 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 class DataLoader(object):
     """A TensorFlow Dataset API based loader for semantic segmentation problems."""
 
-    def __init__(self, image_paths, mask_paths, image_size, channels=[3, 3], crop_percent=None, seed=None,
-                 augment=True, compose=False, one_hot_encoding=False, palette=None):
+    def __init__(self, image_paths: List[str], mask_paths: List[str], image_size: Tuple[int],
+                 channels: Tuple[int] = (3, 3), crop_percent: float = None, seed: int = None,
+                 augment: bool = True, compose: bool = False, one_hot_encoding: bool = False, palette=None):
         """
         Initializes the data loader object
         Args:
@@ -117,7 +120,7 @@ class DataLoader(object):
         Resizes images to specified size.
         """
         image = tf.image.resize(image, self.image_size)
-        mask = tf.image.resize(mask, self.image_size)
+        mask = tf.image.resize(mask, self.image_size, method="nearest")
         
         return image, mask
 
